@@ -116,3 +116,35 @@ with col_output:
     
     st.text_area("📝 Email Body Copy:", value=body_template, height=350)
     st.info("💡 Changes made to lists will persist across app restarts as long as the 'Save Changes' button is pressed.")
+
+# ... (Keep your existing subject_line and body_template logic above this) ...
+
+    st.text_input("📋 Subject Line:", value=subject_line)
+    st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]))
+    st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]))
+    st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]))
+    
+    final_body = st.text_area("📝 Email Body Copy:", value=body_template, height=300)
+    
+    # NEW CODE: Format strings for the mailto link
+    import urllib.parse
+    to_str = ",".join(st.session_state.project_database[selected_project]["to"])
+    cc_str = ",".join(st.session_state.project_database[selected_project]["cc"])
+    bcc_str = ",".join(st.session_state.project_database[selected_project]["bcc"])
+    
+    # Encode spaces and line breaks so the mail program reads them perfectly
+    encoded_subject = urllib.parse.quote(subject_line)
+    encoded_body = urllib.parse.quote(final_body)
+    
+    # Construct the complete automatic mail hook link
+    mailto_url = f"mailto:{to_str}?cc={cc_str}&bcc={bcc_str}&subject={encoded_subject}&body={encoded_body}"
+    
+    st.markdown("---")
+    # Display a beautiful clickable action button
+    st.markdown(
+        f'<a href="{mailto_url}" target="_blank" style="text-decoration:none;">'
+        '<button style="background-color:#4CAF50; color:white; padding:12px 24px; '
+        'border:none; border-radius:4px; cursor:pointer; font-size:16px; width:100%; font-weight:bold;">'
+        '🚀 Open in Outlook / Mail Client</button></a>', 
+        unsafe_allow_html=True
+    )
