@@ -4,45 +4,34 @@ import json
 import os
 import urllib.parse
 
-# 1. SET PAGE THEME, VIBRANT TAB TITLE, AND EMOTICON FAVICON
 st.set_page_config(
     page_title="MailCraft Pro | Template Automation", 
     page_icon="🎨", 
     layout="wide"
 )
 
-# 2. INJECT VIBRANT MODERN UI STYLE CODES (CSS Customization)
+# 2. INJECT VIBRANT MODERN UI STYLE CODES
 st.markdown("""
     <style>
-    /* Gradient line effect at the top of the app */
     .stAppHeader {
         border-top: 6px solid transparent;
         background-image: linear-gradient(to right, #FF4B4B, #FF8F00, #4A00E0);
         background-size: 100% 6px;
         background-repeat: no-repeat;
     }
-    
-    /* Make input text areas and input blocks rounded and sleek */
     div.stTextArea textarea, div.stTextInput input, div.stSelectbox div {
         border-radius: 10px !important;
         border: 1px solid #E0E0E0 !important;
         transition: all 0.3s ease;
     }
-    
-    /* Give input blocks a nice color highlight on click/focus */
     div.stTextArea textarea:focus, div.stTextInput input:focus {
         border-color: #4A00E0 !important;
         box-shadow: 0 0 8px rgba(74, 0, 224, 0.2) !important;
     }
-    
-    /* Styling for expander bars */
-    div.団.st-emotion-cache-1h996g3 {
-        border-radius: 10px !important;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. SILHOUETTE HEADER CONTAINER WITH EMOTICON GRAPHICS
+# 3. SILHOUETTE HEADER CONTAINER
 st.markdown("""
     <div style="display: flex; align-items: center; background-color: #F8F9FA; padding: 20px; border-radius: 12px; border-left: 5px solid #4A00E0; margin-bottom: 25px;">
         <div style="font-size: 42px; margin-right: 20px; color: #4A00E0;">📬</div>
@@ -55,7 +44,6 @@ st.markdown("""
 
 DB_FILE = "projects.json"
 
-# Helper function to load data from the JSON file
 def load_project_database():
     if os.path.exists(DB_FILE):
         try:
@@ -76,7 +64,6 @@ def load_project_database():
         }
     }
 
-# Helper function to save data to the JSON file
 def save_project_database(data):
     with open(DB_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -84,7 +71,7 @@ def save_project_database(data):
 if 'project_database' not in st.session_state:
     st.session_state.project_database = load_project_database()
 
-# 4. INTERFACE LAYOUT: CONFIGURATION VS OUTPUT
+# 4. INTERFACE LAYOUT
 col_config, col_output = st.columns([1, 1.2], gap="large")
 
 with col_config:
@@ -145,7 +132,7 @@ with col_output:
     elif report_type == "Half-Yearly Report":
         calculated_body = f"Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for {selected_project}, synthesized through {selected_month} {selected_year}.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"
     else:
-        calculated_body = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
+        calculated_body = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {selected_year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
 
     state_fingerprint = f"{selected_project}_{report_type}_{selected_month}_{selected_year}"
 
@@ -155,24 +142,21 @@ with col_output:
     final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key=f"bcc_{state_fingerprint}")
     final_body = st.text_area("📝 Email Body Copy:", value=calculated_body, height=250, key=f"body_{state_fingerprint}")
     
-    # URL Encoding extraction strings
+    st.markdown("---")
+    
+    # FIX: Native link_button architecture evaluates data ONLY after state processing completes
     encoded_subject = urllib.parse.quote(final_subject)
     encoded_body = urllib.parse.quote(final_body)
-    
     clean_to = urllib.parse.quote(final_to)
     clean_cc = urllib.parse.quote(final_cc)
     clean_bcc = urllib.parse.quote(final_bcc)
     
     gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={clean_to}&cc={clean_cc}&bcc={clean_bcc}&su={encoded_subject}&body={encoded_body}"
     
-    st.markdown("---")
-    
-    # Custom modern button styling matching Google Material Design with rounded edges
-    st.markdown(
-        f'<a href="{gmail_url}" target="_blank" style="text-decoration:none;">'
-        '<button style="background-image: linear-gradient(135deg, #EA4335 0%, #C5221F 100%); color:white; padding:14px 28px; '
-        'border:none; border-radius:50px; cursor:pointer; font-size:16px; width:100%; font-weight:bold; '
-        'box-shadow: 0 4px 15px rgba(234, 67, 53, 0.3); transition: all 0.3s ease;">'
-        '🚀 Open Compose Window in Web Gmail</button></a>', 
-        unsafe_allow_html=True
+    # Using st.link_button forces the browser to sync text edits safely before navigating away
+    st.link_button(
+        label="🚀 Open Compose Window in Web Gmail",
+        url=gmail_url,
+        use_container_width=True,
+        type="primary"
     )
