@@ -4,7 +4,7 @@ import json
 import os
 import urllib.parse
 
-st.set_page_config(page_title="Dynamic Email Generator", layout="wide")
+st.set_page_config(page_title="Gmail Template Generator", layout="wide")
 st.title("✉️ Smart Email Template & Recipient Automation Engine")
 st.write("Configure projects, manage sticky distribution groups, and compile time-sensitive reporting emails dynamically.")
 
@@ -114,7 +114,7 @@ with col_output:
     final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key="out_bcc")
     final_body = st.text_area("📝 Email Body Copy:", value=body_template, height=250, key="out_body")
     
-    # URL Encoding strings for the mailto trigger
+    # URL Encoding strings tailored explicitly for Google Gmail's web compose action structure
     to_str = ",".join(st.session_state.project_database[selected_project]["to"])
     cc_str = ",".join(st.session_state.project_database[selected_project]["cc"])
     bcc_str = ",".join(st.session_state.project_database[selected_project]["bcc"])
@@ -122,14 +122,15 @@ with col_output:
     encoded_subject = urllib.parse.quote(final_subject)
     encoded_body = urllib.parse.quote(final_body)
     
-    mailto_url = f"mailto:{to_str}?cc={cc_str}&bcc={bcc_str}&subject={encoded_subject}&body={encoded_body}"
+    # NEW GMAIL WEB API LINK DEFINITION
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={to_str}&cc={cc_str}&bcc={bcc_str}&su={encoded_subject}&body={encoded_body}"
     
     st.markdown("---")
-    # Clean Action Button launcher linked straight to desktop mail clients
+    # Action Button updated for Gmail Web interface launcher styling
     st.markdown(
-        f'<a href="{mailto_url}" target="_blank" style="text-decoration:none;">'
-        '<button style="background-color:#4CAF50; color:white; padding:12px 24px; '
+        f'<a href="{gmail_url}" target="_blank" style="text-decoration:none;">'
+        '<button style="background-color:#ea4335; color:white; padding:12px 24px; '
         'border:none; border-radius:4px; cursor:pointer; font-size:16px; width:100%; font-weight:bold;">'
-        '🚀 Open in Outlook / Mail Client</button></a>', 
+        '🚀 Open Compose Window in Web Gmail</button></a>', 
         unsafe_allow_html=True
     )
