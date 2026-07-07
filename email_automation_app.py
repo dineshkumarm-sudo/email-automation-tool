@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 import json
 import os
+import urllib.parse
 
 st.set_page_config(page_title="Dynamic Email Generator", layout="wide")
 st.title("✉️ Smart Email Template & Recipient Automation Engine")
@@ -51,13 +52,11 @@ with col_config:
     selected_project = st.selectbox("Select Project Matrix:", available_projects)
     
     with st.expander("➕ Add New Project Profile"):
-        new_proj_name = st.text_input("New Project Name:")
+        new_proj_name = st.text_input("New Project Name:", key="new_proj_input")
         if st.button("Save New Project") and new_proj_name:
-            # Clean up text trailing spaces
             clean_name = new_proj_name.strip()
             if clean_name and clean_name not in st.session_state.project_database:
                 st.session_state.project_database[clean_name] = {"to": [], "cc": [], "bcc": []}
-                # Permanently save the new project profile to disk
                 save_project_database(st.session_state.project_database)
                 st.success(f"Project '{clean_name}' saved permanently to file!")
                 st.rerun()
@@ -79,9 +78,9 @@ with col_config:
     
     proj_data = st.session_state.project_database[selected_project]
     
-    to_input = st.text_area("TO Recipients (Comma Separated):", value=", ".join(proj_data["to"]))
-    cc_input = st.text_area("CC Recipients (Comma Separated):", value=", ".join(proj_data["cc"]))
-    bcc_input = st.text_area("BCC Recipients (Comma Separated):", value=", ".join(proj_data["bcc"]))
+    to_input = st.text_area("TO Recipients (Comma Separated):", value=", ".join(proj_data["to"]), key="to_area")
+    cc_input = st.text_area("CC Recipients (Comma Separated):", value=", ".join(proj_data["cc"]), key="cc_area")
+    bcc_input = st.text_area("BCC Recipients (Comma Separated):", value=", ".join(proj_data["bcc"]), key="bcc_area")
     
     # Save edits back to state AND write to JSON file
     if st.button("💾 Save Changes to Distribution List"):
@@ -89,7 +88,6 @@ with col_config:
         st.session_state.project_database[selected_project]["cc"] = [e.strip() for e in cc_input.split(",") if e.strip()]
         st.session_state.project_database[selected_project]["bcc"] = [e.strip() for e in bcc_input.split(",") if e.strip()]
         
-        # This writes it directly to the JSON file permanently!
         save_project_database(st.session_state.project_database)
         st.success(f"Changes saved permanently for {selected_project}!")
         st.rerun()
@@ -101,46 +99,33 @@ with col_output:
     subject_line = f"[{selected_project}] - {report_type} | {selected_month} {selected_year}"
     
     if report_type == "Monthly Review Report":
-        body_template = f"""Hi Team,\n\nPlease find attached the performance metrics and milestone updates for **{selected_project}** covering the operational window of **{selected_month} {selected_year}**.\n\nKey focuses for this review session:\n- Core deliverables status for {selected_month}\n- Budget burn rate tracking\n- Next steps scheduled for the upcoming month\n\nBest regards,"""
+        body_template = f"Hi Team,\n\nPlease find attached the performance metrics and milestone updates for {selected_project} covering the operational window of {selected_month} {selected_year}.\n\nKey focuses for this review session:\n- Core deliverables status for {selected_month}\n- Budget burn rate tracking\n- Next steps scheduled for the upcoming month\n\nBest regards,"
     elif report_type == "Quarterly Report":
-        body_template = f"""Dear Stakeholders,\n\nWe have finalized the Q1/Q2/Q3 operational evaluation parameters for **{selected_project}**. This dynamic data bundle reflects our cumulative metrics finalized around the **{selected_month}** evaluation mark.\n\nPlease review the attached sheets detailing financial variance reports and system deployment speeds.\n\nRegards,"""
+        body_template = f"Dear Stakeholders,\n\nWe have finalized the operational evaluation parameters for {selected_project}. This dynamic data bundle reflects our cumulative metrics finalized around the {selected_month} evaluation mark.\n\nPlease review the attached sheets detailing financial variance reports and system deployment speeds.\n\nRegards,"
     elif report_type == "Half-Yearly Report":
-        body_template = f"""Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for **{selected_project}**, synthesized through **{selected_month} {selected_year}**.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"""
+        body_template = f"Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for {selected_project}, synthesized through {selected_month} {selected_year}.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"
     else:
-        body_template = f"""All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for **{selected_project}** tracking back through our milestone evaluations in **{selected_year}**.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"""
+        body_template = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {selected_year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
 
-    st.text_input("📋 Subject Line:", value=subject_line)
-    st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]))
-    st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]))
-    st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]))
+    # Output Interactive Widgets
+    final_subject = st.text_input("📋 Subject Line:", value=subject_line, key="out_subject")
+    final_to = st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]), key="out_to")
+    final_cc = st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]), key="out_cc")
+    final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key="out_bcc")
+    final_body = st.text_area("📝 Email Body Copy:", value=body_template, height=250, key="out_body")
     
-    st.text_area("📝 Email Body Copy:", value=body_template, height=350)
-    st.info("💡 Changes made to lists will persist across app restarts as long as the 'Save Changes' button is pressed.")
-
-# ... (Keep your existing subject_line and body_template logic above this) ...
-
-    st.text_input("📋 Subject Line:", value=subject_line)
-    st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]))
-    st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]))
-    st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]))
-    
-    final_body = st.text_area("📝 Email Body Copy:", value=body_template, height=300)
-    
-    # NEW CODE: Format strings for the mailto link
-    import urllib.parse
+    # URL Encoding strings for the mailto trigger
     to_str = ",".join(st.session_state.project_database[selected_project]["to"])
     cc_str = ",".join(st.session_state.project_database[selected_project]["cc"])
     bcc_str = ",".join(st.session_state.project_database[selected_project]["bcc"])
     
-    # Encode spaces and line breaks so the mail program reads them perfectly
-    encoded_subject = urllib.parse.quote(subject_line)
+    encoded_subject = urllib.parse.quote(final_subject)
     encoded_body = urllib.parse.quote(final_body)
     
-    # Construct the complete automatic mail hook link
     mailto_url = f"mailto:{to_str}?cc={cc_str}&bcc={bcc_str}&subject={encoded_subject}&body={encoded_body}"
     
     st.markdown("---")
-    # Display a beautiful clickable action button
+    # Clean Action Button launcher linked straight to desktop mail clients
     st.markdown(
         f'<a href="{mailto_url}" target="_blank" style="text-decoration:none;">'
         '<button style="background-color:#4CAF50; color:white; padding:12px 24px; '
