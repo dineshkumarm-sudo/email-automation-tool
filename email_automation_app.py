@@ -4,9 +4,54 @@ import json
 import os
 import urllib.parse
 
-st.set_page_config(page_title="Gmail Template Generator", layout="wide")
-st.title("✉️ Smart Email Template & Recipient Automation Engine")
-st.write("Configure projects, manage sticky distribution groups, and compile time-sensitive reporting emails dynamically.")
+# 1. SET PAGE THEME, VIBRANT TAB TITLE, AND EMOTICON FAVICON
+st.set_page_config(
+    page_title="MailCraft Pro | Template Automation", 
+    page_icon="🎨", 
+    layout="wide"
+)
+
+# 2. INJECT VIBRANT MODERN UI STYLE CODES (CSS Customization)
+st.markdown("""
+    <style>
+    /* Gradient line effect at the top of the app */
+    .stAppHeader {
+        border-top: 6px solid transparent;
+        background-image: linear-gradient(to right, #FF4B4B, #FF8F00, #4A00E0);
+        background-size: 100% 6px;
+        background-repeat: no-repeat;
+    }
+    
+    /* Make input text areas and input blocks rounded and sleek */
+    div.stTextArea textarea, div.stTextInput input, div.stSelectbox div {
+        border-radius: 10px !important;
+        border: 1px solid #E0E0E0 !important;
+        transition: all 0.3s ease;
+    }
+    
+    /* Give input blocks a nice color highlight on click/focus */
+    div.stTextArea textarea:focus, div.stTextInput input:focus {
+        border-color: #4A00E0 !important;
+        box-shadow: 0 0 8px rgba(74, 0, 224, 0.2) !important;
+    }
+    
+    /* Styling for expander bars */
+    div.団.st-emotion-cache-1h996g3 {
+        border-radius: 10px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. SILHOUETTE HEADER CONTAINER WITH EMOTICON GRAPHICS
+st.markdown("""
+    <div style="display: flex; align-items: center; background-color: #F8F9FA; padding: 20px; border-radius: 12px; border-left: 5px solid #4A00E0; margin-bottom: 25px;">
+        <div style="font-size: 42px; margin-right: 20px; color: #4A00E0;">📬</div>
+        <div>
+            <h2 style="margin: 0; padding: 0; color: #1E1E24; font-family: 'Inter', sans-serif;">Smart Email Template & Recipient Automation Engine</h2>
+            <p style="margin: 5px 0 0 0; color: #5F6368; font-size: 14px;">Configure projects, manage sticky distribution groups, and compile time-sensitive reporting emails dynamically.</p>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 DB_FILE = "projects.json"
 
@@ -39,11 +84,11 @@ def save_project_database(data):
 if 'project_database' not in st.session_state:
     st.session_state.project_database = load_project_database()
 
-# 2. INTERFACE LAYOUT: CONFIGURATION VS OUTPUT
-col_config, col_output = st.columns([1, 1.2])
+# 4. INTERFACE LAYOUT: CONFIGURATION VS OUTPUT
+col_config, col_output = st.columns([1, 1.2], gap="large")
 
 with col_config:
-    st.subheader("⚙️ Parameter Matrix")
+    st.markdown("<h3 style='color: #4A00E0;'>⚙️ Parameter Matrix</h3>", unsafe_allow_html=True)
     
     available_projects = list(st.session_state.project_database.keys())
     selected_project = st.selectbox("Select Project Matrix:", available_projects)
@@ -69,12 +114,11 @@ with col_config:
     selected_year = st.selectbox("Reporting Target Year:", [2025, 2026, 2027], index=1)
 
     st.markdown("---")
-    st.subheader("👥 Dynamic Distribution Lists")
+    st.markdown(f"<h3 style='color: #FF8F00;'>👥 Distribution Lists</h3>", unsafe_allow_html=True)
     st.caption(f"Editing records locked to: **{selected_project}**")
     
     proj_data = st.session_state.project_database[selected_project]
     
-    # We use a project-specific key here so changing the project dropdown swaps out the distribution lists instantly too!
     to_input = st.text_area("TO Recipients (Comma Separated):", value=", ".join(proj_data["to"]), key=f"to_area_{selected_project}")
     cc_input = st.text_area("CC Recipients (Comma Separated):", value=", ".join(proj_data["cc"]), key=f"cc_area_{selected_project}")
     bcc_input = st.text_area("BCC Recipients (Comma Separated):", value=", ".join(proj_data["bcc"]), key=f"bcc_area_{selected_project}")
@@ -88,9 +132,9 @@ with col_config:
         st.success(f"Changes saved permanently for {selected_project}!")
         st.rerun()
 
-# 3. DYNAMIC TEMPLATE RENDERING ENGINE
+# 5. DYNAMIC TEMPLATE RENDERING ENGINE
 with col_output:
-    st.subheader("📄 Generated Mail Composition Output")
+    st.markdown("<h3 style='color: #FF4B4B;'>📄 Composition Preview</h3>", unsafe_allow_html=True)
     
     calculated_subject = f"[{selected_project}] - {report_type} | {selected_month} {selected_year}"
     
@@ -101,9 +145,8 @@ with col_output:
     elif report_type == "Half-Yearly Report":
         calculated_body = f"Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for {selected_project}, synthesized through {selected_month} {selected_year}.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"
     else:
-        calculated_body = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {selected_year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
+        calculated_body = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
 
-    # FIX: Generating a unique key configuration string based on dropdown choices forces widget regenerations
     state_fingerprint = f"{selected_project}_{report_type}_{selected_month}_{selected_year}"
 
     final_subject = st.text_input("📋 Subject Line:", value=calculated_subject, key=f"sub_{state_fingerprint}")
@@ -112,17 +155,24 @@ with col_output:
     final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key=f"bcc_{state_fingerprint}")
     final_body = st.text_area("📝 Email Body Copy:", value=calculated_body, height=250, key=f"body_{state_fingerprint}")
     
-    # URL Encoding reading directly from the active visual text inputs (allowing quick manual overrides)
+    # URL Encoding extraction strings
     encoded_subject = urllib.parse.quote(final_subject)
     encoded_body = urllib.parse.quote(final_body)
     
-    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={final_to}&cc={final_cc}&bcc={final_bcc}&su={encoded_subject}&body={encoded_body}"
+    clean_to = urllib.parse.quote(final_to)
+    clean_cc = urllib.parse.quote(final_cc)
+    clean_bcc = urllib.parse.quote(final_bcc)
+    
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={clean_to}&cc={clean_cc}&bcc={clean_bcc}&su={encoded_subject}&body={encoded_body}"
     
     st.markdown("---")
+    
+    # Custom modern button styling matching Google Material Design with rounded edges
     st.markdown(
         f'<a href="{gmail_url}" target="_blank" style="text-decoration:none;">'
-        '<button style="background-color:#ea4335; color:white; padding:12px 24px; '
-        'border:none; border-radius:4px; cursor:pointer; font-size:16px; width:100%; font-weight:bold;">'
+        '<button style="background-image: linear-gradient(135deg, #EA4335 0%, #C5221F 100%); color:white; padding:14px 28px; '
+        'border:none; border-radius:50px; cursor:pointer; font-size:16px; width:100%; font-weight:bold; '
+        'box-shadow: 0 4px 15px rgba(234, 67, 53, 0.3); transition: all 0.3s ease;">'
         '🚀 Open Compose Window in Web Gmail</button></a>', 
         unsafe_allow_html=True
     )
