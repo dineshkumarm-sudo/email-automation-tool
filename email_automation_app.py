@@ -18,7 +18,6 @@ def load_project_database():
                 return json.load(f)
         except Exception:
             pass
-    # Default initial data if the file doesn't exist yet
     return {
         "Project Alpha": {
             "to": ["alpha.lead@company.com", "alpha.pm@company.com"],
@@ -37,7 +36,6 @@ def save_project_database(data):
     with open(DB_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Load the database into session state once upon startup
 if 'project_database' not in st.session_state:
     st.session_state.project_database = load_project_database()
 
@@ -47,7 +45,6 @@ col_config, col_output = st.columns([1, 1.2])
 with col_config:
     st.subheader("⚙️ Parameter Matrix")
     
-    # Project Picker & Addition Zone
     available_projects = list(st.session_state.project_database.keys())
     selected_project = st.selectbox("Select Project Matrix:", available_projects)
     
@@ -61,7 +58,6 @@ with col_config:
                 st.success(f"Project '{clean_name}' saved permanently to file!")
                 st.rerun()
 
-    # Time & Report Frequency Drivers
     report_type = st.selectbox(
         "Reporting Frequency Interval:",
         ["Monthly Review Report", "Quarterly Report", "Half-Yearly Report", "Annual Report"]
@@ -70,7 +66,7 @@ with col_config:
     current_month = datetime.now().strftime("%B")
     months_list = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     selected_month = st.selectbox("Reporting Target Month:", months_list, index=months_list.index(current_month))
-    selected_year = st.selectbox("Reporting Target Year:", [2025, 2026, 2027], index=1) # Defaults to 2026
+    selected_year = st.selectbox("Reporting Target Year:", [2025, 2026, 2027], index=1)
 
     st.markdown("---")
     st.subheader("👥 Dynamic Distribution Lists")
@@ -78,11 +74,11 @@ with col_config:
     
     proj_data = st.session_state.project_database[selected_project]
     
-    to_input = st.text_area("TO Recipients (Comma Separated):", value=", ".join(proj_data["to"]), key="to_area")
-    cc_input = st.text_area("CC Recipients (Comma Separated):", value=", ".join(proj_data["cc"]), key="cc_area")
-    bcc_input = st.text_area("BCC Recipients (Comma Separated):", value=", ".join(proj_data["bcc"]), key="bcc_area")
+    # We use a project-specific key here so changing the project dropdown swaps out the distribution lists instantly too!
+    to_input = st.text_area("TO Recipients (Comma Separated):", value=", ".join(proj_data["to"]), key=f"to_area_{selected_project}")
+    cc_input = st.text_area("CC Recipients (Comma Separated):", value=", ".join(proj_data["cc"]), key=f"cc_area_{selected_project}")
+    bcc_input = st.text_area("BCC Recipients (Comma Separated):", value=", ".join(proj_data["bcc"]), key=f"bcc_area_{selected_project}")
     
-    # Save edits back to state AND write to JSON file
     if st.button("💾 Save Changes to Distribution List"):
         st.session_state.project_database[selected_project]["to"] = [e.strip() for e in to_input.split(",") if e.strip()]
         st.session_state.project_database[selected_project]["cc"] = [e.strip() for e in cc_input.split(",") if e.strip()]
@@ -96,37 +92,33 @@ with col_config:
 with col_output:
     st.subheader("📄 Generated Mail Composition Output")
     
-    subject_line = f"[{selected_project}] - {report_type} | {selected_month} {selected_year}"
+    calculated_subject = f"[{selected_project}] - {report_type} | {selected_month} {selected_year}"
     
     if report_type == "Monthly Review Report":
-        body_template = f"Hi Team,\n\nPlease find attached the performance metrics and milestone updates for {selected_project} covering the operational window of {selected_month} {selected_year}.\n\nKey focuses for this review session:\n- Core deliverables status for {selected_month}\n- Budget burn rate tracking\n- Next steps scheduled for the upcoming month\n\nBest regards,"
+        calculated_body = f"Hi Team,\n\nPlease find attached the performance metrics and milestone updates for {selected_project} covering the operational window of {selected_month} {selected_year}.\n\nKey focuses for this review session:\n- Core deliverables status for {selected_month}\n- Budget burn rate tracking\n- Next steps scheduled for the upcoming month\n\nBest regards,"
     elif report_type == "Quarterly Report":
-        body_template = f"Dear Stakeholders,\n\nWe have finalized the operational evaluation parameters for {selected_project}. This dynamic data bundle reflects our cumulative metrics finalized around the {selected_month} evaluation mark.\n\nPlease review the attached sheets detailing financial variance reports and system deployment speeds.\n\nRegards,"
+        calculated_body = f"Dear Stakeholders,\n\nWe have finalized the operational evaluation parameters for {selected_project}. This dynamic data bundle reflects our cumulative metrics finalized around the {selected_month} evaluation mark.\n\nPlease review the attached sheets detailing financial variance reports and system deployment speeds.\n\nRegards,"
     elif report_type == "Half-Yearly Report":
-        body_template = f"Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for {selected_project}, synthesized through {selected_month} {selected_year}.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"
+        calculated_body = f"Executive Team,\n\nEnclosed is the comprehensive Mid-Year strategic tracking summary data for {selected_project}, synthesized through {selected_month} {selected_year}.\n\nThis high-level presentation covers strategic realignments, execution risks mitigated, and project health overviews.\n\nSincerely,"
     else:
-        body_template = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {selected_year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
+        calculated_body = f"All Hands,\n\nIt is our privilege to broadcast the comprehensive Annual Operational and Financial Closures documentation for {selected_project} tracking back through our milestone evaluations in {selected_year}.\n\nThank you for your continued dedication to tracking this initiative across all metrics.\n\nWarm regards,"
 
-    # Output Interactive Widgets
-    final_subject = st.text_input("📋 Subject Line:", value=subject_line, key="out_subject")
-    final_to = st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]), key="out_to")
-    final_cc = st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]), key="out_cc")
-    final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key="out_bcc")
-    final_body = st.text_area("📝 Email Body Copy:", value=body_template, height=250, key="out_body")
+    # FIX: Generating a unique key configuration string based on dropdown choices forces widget regenerations
+    state_fingerprint = f"{selected_project}_{report_type}_{selected_month}_{selected_year}"
+
+    final_subject = st.text_input("📋 Subject Line:", value=calculated_subject, key=f"sub_{state_fingerprint}")
+    final_to = st.text_input("👤 To:", value=", ".join(st.session_state.project_database[selected_project]["to"]), key=f"to_{state_fingerprint}")
+    final_cc = st.text_input("👥 Cc:", value=", ".join(st.session_state.project_database[selected_project]["cc"]), key=f"cc_{state_fingerprint}")
+    final_bcc = st.text_input("🕵️ Bcc:", value=", ".join(st.session_state.project_database[selected_project]["bcc"]), key=f"bcc_{state_fingerprint}")
+    final_body = st.text_area("📝 Email Body Copy:", value=calculated_body, height=250, key=f"body_{state_fingerprint}")
     
-    # URL Encoding strings tailored explicitly for Google Gmail's web compose action structure
-    to_str = ",".join(st.session_state.project_database[selected_project]["to"])
-    cc_str = ",".join(st.session_state.project_database[selected_project]["cc"])
-    bcc_str = ",".join(st.session_state.project_database[selected_project]["bcc"])
-    
+    # URL Encoding reading directly from the active visual text inputs (allowing quick manual overrides)
     encoded_subject = urllib.parse.quote(final_subject)
     encoded_body = urllib.parse.quote(final_body)
     
-    # NEW GMAIL WEB API LINK DEFINITION
-    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={to_str}&cc={cc_str}&bcc={bcc_str}&su={encoded_subject}&body={encoded_body}"
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={final_to}&cc={final_cc}&bcc={final_bcc}&su={encoded_subject}&body={encoded_body}"
     
     st.markdown("---")
-    # Action Button updated for Gmail Web interface launcher styling
     st.markdown(
         f'<a href="{gmail_url}" target="_blank" style="text-decoration:none;">'
         '<button style="background-color:#ea4335; color:white; padding:12px 24px; '
